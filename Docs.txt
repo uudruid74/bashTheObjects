@@ -1,0 +1,148 @@
+bashTheObjects
+==============
+
+	This project is designed to being OOP to standard bash in way that is
+simple.  It came about because I wanted to develop a custom linux-installer
+for another project and text-based installers are dead, writing my own GUI
+would take way too long, and RedHat's installer is way too complicated and
+does some things I don't like.  So, I decided on a web-based installer.  This
+has some nice side-effects, such as being able to install to headless systems.
+The next question, was what to write it in.
+	There are plenty of languages around, and thats the problem.  I didn't
+want people to have to learn some new language to be able to expand and modify
+the installer.  The obvious solution was plain bash, but maintaining a bash
+script over time is incredibly painful.  What if bash had OOP?
+	Enter bashTheObjects!
+
+Calling Methods
+===============
+
+First, your main code should source the library file, oop.lib.sh
+Then you can import classes with "import"
+	import <classname>
+
+Construction:
+	new <classname> <varname> [<args>]
+
+	Ex: new HtmlPage main title:"Cgi Test"
+
+This creates the variable you pass it as an instance and calls the class
+constructor.  The constructor can get the name of the variable as $varname.
+
+Instance Methods:
+	varname.method [<args>]
+
+	Ex: main.add style:globalStyle content:mainDiv
+
+	Like in typical bash, the return value will be numeric.  To return some
+other variable, print it and call the method like this:
+	$(varname.method [<args>])
+
+Arguments:
+	Arguments are prefixed with an argument name followed by a colon.  You
+name your arguments when you pass them.  This means that arguments can be in
+nearly any order.  Your arguments will be placed in local variables of the
+same name as the argument.  Spaces are allowed, but in this case you should
+quote the argument, although its not actually necessary!
+	You can have the first argument be unnamed if you wish.  The variable will
+be named "value" when it is passed to the method.  You can also pass arrays of
+values by using an argument called "all".  This lets your code manage multiple
+styles of invocations based on the arguments it sees.
+	For example:
+		main.add all:div1 div2 div3
+
+	and I could also do
+		main.add div4
+	or the example above.
+
+
+
+Creating Classes
+================
+
+CLASS DEFINITION
+
+A class begins with the "class" keyword followed by the class name.
+
+You should then list the variables and public functions of the class.
+	public <funcname> 	makes a public method
+	var <varname> 		an attribute of an instance
+	static <varname>	a class variable, shared by all instances
+	const <varname>		the same as static, but changes aren't saved
+
+	You can also specify a default value after any variable and this value is
+used to initialize the variable.  If you have arrays or hashes, then you can
+use the keywords "Array" or "Hash" after the variable name.  You can place an
+initializer after the keyword.
+
+
+METHOD DEFINITIONS
+
+	You now list all your private and public methods.  This is done just as a
+normal bash function with a name of class::function.  Inside each function,
+your arguments, SELF, and CLASS are defined for you.  You call private methods
+directly as class::function.  Beware that this should only be done from inside
+another method that you can called with the dot operation described above.  If
+you absolutely need to call a method from outside the class (static methods),
+then use the "callMethod" function.  You pass it the SELF variable, then the
+classname, then function name, then any arguments.  For example:
+		
+		callMethod '' MyClass MyFunction var1:value var2:value2
+		
+		... and MyClass::MyFunction will get called, and variables are set
+		and restored.  Obviously, if you use instance variables, you'll need
+		a valid SELF instead of the placeholder shown.
+
+	The constructor has the format classname::classname
+
+
+GETTERS/SETTERS
+
+	You can do this really easy with really short functions.  In fact, you can
+make your variables public, like this ...
+	
+		Class::set() { :; }
+		Class::get() { println ${!value}; }
+
+	Make sure those functions are "public" and then you can call them with
+		varname.set attr1:"value" attr2:"value2" attr3"My value"
+	And if the parameter has the same name as an attribute (var) it will be set
+	Likewise,
+		$(varname.get attr1)
+	will return the value of attr1.
+
+
+
+Utility Functions
+=================
+
+print 		a safer version of echo.  This version has no terminating newline
+println 	as above, with a newline
+debug x 	debug takes the debug level to associate the message with and the
+			message string.  You can set the DEBUG variable to determine how
+			verbose the output is, or set DEBUG to a filename for everything!
+assert 		Simple asserts.  Kills the program if the given value isn't true
+typeof 		returns an object's class
+kindof 		tests if a class is in the inheritance tree
+implements 	tests if a particular method is implemented
+new 		constructor - see above
+destroy 	destroy varname will clean up a variable and call your "ondestroy"
+set_instance
+			use this (no arguments) in your constructor to create a simple
+			singleton.  You'll need a class static called "instance".
+return_instance
+			you call this from a qualified function (class::function) to which
+			you pass the name of a variable to set (like with new).  The new
+			variable will be set from the static "instance" with all the 
+			blessings of a full-fledged object.  See HtmlPage for an example.
+import 		imports a class.  The path for classes can be set with CLASSPATH
+subclass 	put this and the name of the class you want to inherit from to
+			subclass.  This is done with the Style and Icon classes as 
+			subclasses of Link.
+
+
+See the examples for more information.
+
+Email questions/comments to Evan Langlois <uudruid74@gmail.com>
+
+
