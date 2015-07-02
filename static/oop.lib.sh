@@ -2,7 +2,7 @@
 
 # ---------------------------------------------------------------------------
 # OO support functions
-# Original design by Pim van Riezen <pi@madscience.nl>
+# Original implementation by Pim van Riezen <pi@madscience.nl>
 #
 # Extra bugs & kludges by Evan K Langlois <uudruid74@gmail.com>
 #   more specifically, debug, assert, subclass, constant, static, public,
@@ -12,6 +12,21 @@
 #   is a HACK!  Do NOT edit anything in here.  You probably don't even want
 #   to read anything in here.  It's ugly!  The code it supports is what we
 #   want to be beautiful and pretty.
+#
+# Parameters are passed by name.  You may also use a single parameter
+#	which will be passed as the "value" variable.  You can get a list of
+#	all set parameters in the "vars" variable.
+#
+# BUG:  Currently, complex types are not being saved/restored.  This
+#	means that the Array, Hash, and classes can't be localized
+#	so you'll need to declare them as globals as a workaround.
+#
+# 			*** WARNING ***						*** WARNING ***
+# WARNING: This code has lots of evals and other tricks.  It is NOT
+# suitable for public websites or any other case where security is any
+# concern at all!!  You have been Warned!
+#
+# LICENSE: This code is distributed under the Artistic license 
 # ---------------------------------------------------------------------------
 
 DEFCLASS=""
@@ -59,23 +74,36 @@ class() {
 
 static() { #- class vars
   local varname="CLASS_${DEFCLASS}_STATICS"
-  eval $varname="\"\${$varname}$1 \""
+  eval $varname="\"\${$varname}$2 \""
   if [[ -n $2 ]]; then
-    if [[ $2 == "Array" ]]; then
-    	eval "declare -a CLASS_${DEFCLASS}_$1=($3)"
-    elif [[ $2 == "Hash" ]]; then
-    	eval "declare -A CLASS_${DEFCLASS}_$1=($3)"
-    else
-    	eval "CLASS_${DEFCLASS}_$1=\"$2\""
-    fi
+	if [[ $1 == "Array" ]]; then
+		eval "declare -ag CLASS_${DEFCLASS}_$2=($3)"
+	elif [[ $1 == "Hash" ]]; then
+		eval "declare -Ag CLASS_${DEFCLASS}_$2=($3)"
+	elif [[ $1 == 'var' ]]; then
+		eval "CLASS_${DEFCLASS}_$2=\"$3\""
+	else
+  		import $1
+		eval "new $1 CLASS_${DEFCLASS}_$2 $3"
+  	fi
   fi
 }
 
 const() { #- constant class vars
   local varname="CLASS_${DEFCLASS}_CONSTS"
-  eval $varname="\"\${$varname}$1 \""
+  eval $varname="\"\${$varname}$2 \""
   if [[ -n $2 ]]; then
-    eval "CLASS_${DEFCLASS}_$1=\"$2\""
+    if [[ $1 == "Array" ]]; then
+		eval "declare -agr CLASS_${DEFCLASS}_$2=($3)"
+	elif [[ $1 == "Hash" ]]; then
+		eval "declare -Agr CLASS_${DEFCLASS}_$2=($3)"
+	elif [[ $1 == 'var' ]]; then
+		eval "declare -gr CLASS_${DEFCLASS}_$2=\"$3\""
+	else
+    	import $1
+    	eval "new $1 CLASS_${DEFCLASS}_$2 $3"
+    	eval "declare -gr CLASS_${DEFCLASS}_$2"
+    fi
   fi
 }
 
@@ -91,17 +119,20 @@ public() {
   eval "$varname=\"\${$varname}$1 \""
 }
 
-var() {	#- instance vars
+inst() {	#- instance vars
   local varname="CLASS_${DEFCLASS}_VARS"
-  eval $varname="\"\${$varname}$1 \""
+  eval $varname="\"\${$varname}$2 \""
   if [[ -n $2 ]]; then
-	if [[ $2 == "Array" ]]; then
-		eval "declare -a INIT_${DEFCLASS}_$1=()"
-	elif [[ $2 == "Hash" ]]; then
-		eval "declare -A INIT_${DEFCLASS}_$1=()"
+	if [[ $1 == "Array" ]]; then
+		eval "declare -ag INIT_${DEFCLASS}_$2=($3)"
+	elif [[ $1 == "Hash" ]]; then
+		eval "declare -Ag INIT_${DEFCLASS}_$2=($3)"
+	elif [[ $1 == "var" ]]; then
+		eval "INIT_${DEFCLASS}_$2=\"$3\""
 	else
-  		eval "INIT_${DEFCLASS}_$1=\"$2\""
-  	fi
+		import $1
+		eval "new $1 INIT_${DEFCLASS}_$2 $3"
+	fi
   fi
 }
 
@@ -211,6 +242,7 @@ callMethod() { 		#- Horrible hack to set named arguments with spaces
 		if [[ $tempvar != "all" ]]; then
 			eval "local $tempvar=\"$tempvalue\""
 			debug 6 "Setting $tempvar=$tempvalue"
+			eval "vars=\"\$vars $tempvar\""
 		else
 			debug 6 "all=${all[*]}"
 		fi
@@ -224,6 +256,7 @@ callMethod() { 		#- Horrible hack to set named arguments with spaces
 }
 
 new() {
+  import $1
   local _objclass="$1"
   local varname="$2"
   shift 2

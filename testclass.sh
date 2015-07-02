@@ -10,8 +10,8 @@ class Car
 	public getColor
 	public testpvt
 
-	var color "red"
-	var motion
+	inst var color "red"
+	inst var motion
 
 Car::Car() {
 	motion="Stop"
@@ -34,9 +34,9 @@ class Cat
 	public getColor
 	public speak
 	public ondestroy
-	var color "black"
-	var motion
-	static voice "MEOW"
+	inst var color "black"
+	inst var motion
+	static var voice "MEOW"
 
 Cat::Cat() {
 	motion="Sleeping"
@@ -78,7 +78,7 @@ println The jag is now $(jag.getColor)
 
 class Kitten
 	subclass Cat
-	var size
+	inst var size
 
 new Kitten junior
 if kindof Cat junior; then

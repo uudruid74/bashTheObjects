@@ -18,7 +18,10 @@ Calling Methods
 ===============
 
 First, your main code should source the library file, oop.lib.sh
-Then you can import classes with "import"
+Then you can import classes with "import".  This isn't actually
+required as "new" will import classes automatically, but if you want
+access to other static methods before calling new, or need to run
+other code in your class file at a certain time, import will do it.
 	import <classname>
 
 Construction:
@@ -46,8 +49,10 @@ same name as the argument.  Spaces are allowed, but in this case you should
 quote the argument, although its not actually necessary!
 	You can have the first argument be unnamed if you wish.  The variable will
 be named "value" when it is passed to the method.  You can also pass arrays of
-values by using an argument called "all".  This lets your code manage multiple
-styles of invocations based on the arguments it sees.
+values by using an argument called "all".  Another variable called "vars" is a
+a list of all argument variables that have been passed, which you can loop
+through.  This lets your code manage multiple styles of invocations based on 
+the arguments it sees.
 	For example:
 		main.add all:div1 div2 div3
 
@@ -65,15 +70,15 @@ CLASS DEFINITION
 A class begins with the "class" keyword followed by the class name.
 
 You should then list the variables and public functions of the class.
-	public <funcname> 	makes a public method
-	var <varname> 		an attribute of an instance
-	static <varname>	a class variable, shared by all instances
-	const <varname>		the same as static, but changes aren't saved
+	public <funcname> 		makes a public method
+	inst var <varname> 		an attribute of an instance
+	static var <varname>	a class variable, shared by all instances
+	const var <varname>		the same as static, but changes aren't saved
 
 	You can also specify a default value after any variable and this value is
-used to initialize the variable.  If you have arrays or hashes, then you can
-use the keywords "Array" or "Hash" after the variable name.  You can place an
-initializer after the keyword.
+used to initialize the variable.  The word "var" means a generic bash-style
+variable.  You can place one of your own classnames here or "Array" or "Hash"
+to use more complex variables (this feature is still not working).
 
 
 METHOD DEFINITIONS
@@ -82,7 +87,7 @@ METHOD DEFINITIONS
 normal bash function with a name of class::function.  Inside each function,
 your arguments, SELF, and CLASS are defined for you.  You call private methods
 directly as class::function.  Beware that this should only be done from inside
-another method that you can called with the dot operation described above.  If
+another method that you could call with the dot operation described above.  If
 you absolutely need to call a method from outside the class (static methods),
 then use the "callMethod" function.  You pass it the SELF variable, then the
 classname, then function name, then any arguments.  For example:
@@ -105,7 +110,7 @@ make your variables public, like this ...
 		Class::get() { println ${!value}; }
 
 	Make sure those functions are "public" and then you can call them with
-		varname.set attr1:"value" attr2:"value2" attr3"My value"
+		varname.set attr1:"value" attr2:"value2" attr3:"My value"
 	And if the parameter has the same name as an attribute (var) it will be set
 	Likewise,
 		$(varname.get attr1)
