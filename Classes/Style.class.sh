@@ -1,5 +1,5 @@
 class Style
 	subclass Link
-	const type "text/css"
-	const rel "stylesheet"
+	const var type "text/css"
+	const var rel "stylesheet"
 

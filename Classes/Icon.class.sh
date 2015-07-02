@@ -1,5 +1,5 @@
 class Icon
 	subclass Link
-	const type "image/x-icon"
-	const rel "shortcut icon"
+	const var type "image/x-icon"
+	const var rel "shortcut icon"
 

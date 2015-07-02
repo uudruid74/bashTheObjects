@@ -4,9 +4,9 @@ class Div
 	public dump
 	public set
 
-	var content
-	var classname
-	var idtag
+	inst var content
+	inst var classname
+	inst var idtag
 
 Div::Div() {
 	if [[ -n $class ]]; then

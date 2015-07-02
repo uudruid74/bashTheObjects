@@ -2,7 +2,8 @@ class Link
 	public setURL
 	public dump
 	public url
-	var url
+
+	inst var url
 
 	#- abstract rel, type
 

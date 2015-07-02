@@ -6,13 +6,16 @@ class Query
 	public encode
 	public decode
 	public sanitize
-	public dumpArray
-	static paramArray Hash
+	public dump
+	public values
+
+	static hasharray paramArray
 
 Query::Query() {
-	local temparray
+	declare -Ag paramArray
 	declare -a temparray
 	local saveIFS=$IFS
+	echo $paramArray
 	IFS='=&'
 	temparray=($QUERY_STRING)
 	for (( i=0; i<${#temparray[@]}; i+=2 ))
@@ -55,11 +58,12 @@ Query::decode() {
     printf '%b' "${url_encoded//%/\x}"
 }
 
-Query::dumpArray() {
+Query::dump() {
 	for element in ${all[@]}; do
-		println $element
+		println "$element=${paramArray[$element]}\n"
 	done
 }
+
 #- Other Environment Vars available
 #-----------------------------------------------
 #- SERVER_SIGNATURE=

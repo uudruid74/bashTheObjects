@@ -11,12 +11,13 @@ class HtmlPage
 	public add
 	public render
 
-	static title "No Title Set"
-	static icon ""
-	static stylelist Array
-	static contentlist Array
-	static Singleton ""
-	const CGI_Header "Content-type: text/html\n"
+	static var title "No Title Set"
+	static var icon ""
+#	static Array stylelist
+#	static Array contentlist
+	static var Singleton ""
+	const var CGI_Header "Content-type: text/html\r\n"
+	const var CGI_Redirect "Refresh: 0; url="
 
 
 HtmlPage::instance() {
@@ -24,6 +25,8 @@ HtmlPage::instance() {
 }
 
 HtmlPage::HtmlPage() {
+    declare -ag stylelist
+	declare -ag contentlist
 	if [[ -n $style ]]; then
 		HtmlPage::add
 	fi
@@ -104,4 +107,12 @@ HtmlPage::render() {
 	HtmlPage::dumpBody
 	println "</html>"
 }
+
+HtmlPage::redirect() {
+	if [[ -n $url ]]; then
+		$value = $url
+	fi
+	println "${CGI_Redirect}$value\r\n${CGI_Header}\r\n\r\n";
+}
+
 
