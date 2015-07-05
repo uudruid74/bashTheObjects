@@ -1,7 +1,7 @@
 bashTheObjects
 ==============
 
-	This project is designed to being OOP to standard bash in way that is
+	This project is designed to bring OOP to standard bash in way that is
 simple.  It came about because I wanted to develop a custom linux-installer
 for another project and text-based installers are dead, writing my own GUI
 would take way too long, and RedHat's installer is way too complicated and
