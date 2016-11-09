@@ -1,7 +1,7 @@
 #!/bin/bash
-source /var/www/html/cgi-bin/static/oop.lib.sh
+source static/oop.lib.sh
 
-DEBUG=1
+DEBUG=6
 new Query cgi
 new HtmlPage main title: "Traceroute" refresh: 1
 destination=$(cgi.get q)

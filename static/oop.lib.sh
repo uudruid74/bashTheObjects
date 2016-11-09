@@ -17,17 +17,14 @@
 #	which will be passed as the "value" variable.  You can get a list of
 #	all set parameters in the "vars" variable.
 #
-# BUG:  Currently, complex types are not being saved/restored.  This
-#	means that the Array, Hash, and classes can't be localized
-#	so you'll need to declare them as globals as a workaround.
-#
-# 			*** WARNING ***						*** WARNING ***
+# 		*** WARNING ***				*** WARNING ***
 # WARNING: This code has lots of evals and other tricks.  It is NOT
 # suitable for public websites or any other case where security is any
 # concern at all!!  You have been Warned!
 #
 # LICENSE: This code is distributed under the Artistic license 
 # ---------------------------------------------------------------------------
+source "static/debug.lib.sh"
 
 DEFCLASS=""
 CLASS=""
@@ -35,21 +32,6 @@ SELF=0
 
 #- Currently only a single dir supported
 CLASSPATH="Classes"
-
-#- Debug Levels are :
-#- 0 No Debug 			3 Warnings
-#- 1 Asserts only 		4 Trace User Msgs
-#- 2 Errors 			5 Trace Every Method
-#-        6 Trace Parameter Setting
-#- You can also make this a filename to capture all debug messages
-DEBUG=1 				#- Default; change on the fly
-
-#- NOTE: echo is really buggy ie: print a string that starts with a dash
-#- So, use the following functions instead of echo or echo -n
-
-print() { printf "%b" "$*"; }
-println() { printf "%b\n" "$*"; }
-out() { printf "%b" "$*" >/dev/tty; }
 
 #- Need a tool to generate object id's
 if [[ -x $(which uuidgen) ]]; then
@@ -95,7 +77,7 @@ static() { #- class vars
 	if [[ $1 == "Array" ]]; then
 		eval "declare -ag CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Ag CLASS_${DEFCLASS}_$2"
+		eval "declare -Ag CLASS_${DEFCLASS}_$2['init']=\"$3\""
 	elif [[ $1 == 'var' ]]; then
 		eval "CLASS_${DEFCLASS}_$2=\"$3\""
 	else
@@ -112,7 +94,7 @@ const() { #- constant class vars
     if [[ $1 == "Array" ]]; then
 		eval "declare -agr CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Agr CLASS_${DEFCLASS}_$2"
+		eval "declare -Agr CLASS_${DEFCLASS}_$2['init']=\"$3\""
 	elif [[ $1 == 'var' ]]; then
 		eval "declare -gr CLASS_${DEFCLASS}_$2=\"$3\""
 	else
@@ -143,7 +125,7 @@ inst() {	#- instance vars
 	if [[ $1 == "Array" ]]; then
 		eval "declare -ag INIT_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Ag INIT_${DEFCLASS}_$2"
+		eval "declare -Ag INIT_${DEFCLASS}_$2['init']=\"$3\""
 	elif [[ $1 == "var" ]]; then
 		eval "INIT_${DEFCLASS}_$2=\"$3\""
 	else
@@ -167,6 +149,7 @@ loadvar() {
   for var in $varlist; do
 	copyToGlobal CLASS_${CLASS}_${var} $var
   done
+  cbreak
 }
 
 loadfunc() {
@@ -188,6 +171,7 @@ savevar() {
 	copyToGlobal $var CLASS_${CLASS}_${var}
   	unset $var
   done
+  cbreak
 }
 
 typeof() {
@@ -321,6 +305,7 @@ new() {
     eval "INSTANCE_${_uuid}_${_var}=\"\$INIT_${_objclass}_${_var}\""
   done
   eval "${varname}.${_objclass} \$@ || true"
+  savevar
 }
 
 #- for use by classes only, should have a "static instance"
@@ -408,95 +393,5 @@ subclass() { 		#- this is probably really broken
     eval "CLASS_${DEFCLASS}_$var=\"\$CLASS_${SUPERCLASS}_$var\""
   done
   eval "CLASS_${DEFCLASS}_CONSTS=\"\$CLASS_${SUPERCLASS}_CONSTS \$CLASS_${DEFCLASS}_CONSTS\""
-
 }
 
-assert()                  #  If condition false,
-{                         #+ exit from script
-                          #+ with appropriate error message.
-  if [[ $DEBUG -eq 0 ]]; then
-	return 0
-  fi
-  E_PARAM_ERR=98
-  E_ASSERT_FAILED=99
-  read LINE SUB FILE<<<$(caller 0)
-
-  if [[ $# -lt 1 ]]     #  Not enough parameters passed
-  then                    #+ to assert() function.
-    return $E_PARAM_ERR   #  No damage done.
-  fi
-
-
-  if eval "$1"; then
-    return 0
-  else
-    println "Assertion failed[$?]:  \"$1\" in $SUB from file \"$FILE\", line $LINE"
-    exit $E_ASSERT_FAILED
-  # else
-  #   return
-  #   and continue executing the script.
-  fi  
-}
-
-debug() {
-  read LINE SUB FILENAME <<<$(caller 0)
-  # args level format args...
-  # DEBUG can be a debug level or a debug filename for exhaustive logging
-  if [[ -z $DEBUG || $DEBUG -eq 0 ]]; then
-	return
-  fi
-  local level=$1
-  local fmt=$2
-  shift 2
-  if [[ "0123456789" =~ $DEBUG ]]; then
-  	if [[ $level -gt $DEBUG ]]; then
-		return
-  	fi
-  	eval "printf \"DEBUG[$FILENAME:$SUB:$LINE]: $fmt\\\\n\" \$@" >&2
-  else
-	eval "printf \"DEBUG[$FILENAME:$SUB:$LINE]: $fmt\\\\n\" \$@" >>$DEBUG
-  fi
-}
-
-#-
-#- Simple Integrated Debugger!
-#- 
-trap breakpoint INT
-OUT_RED=$(tput setaf 1)		#- red
-OUT_OFF=$(tput sgr0)		#- normal
-
-
-breakpoint() {				#- Manual breakpoints, debug level 4+
-	DEBUG=6
-	cbreak
-}
-
-cbreak() {					#- conditional breakpoint
-	if [[ DEBUG -lt 4 ]]; then
-		return
-	fi
-	local LINE
-	local SUB
-	local FILENAME
-	read LINE SUB FILENAME <<<$(caller 0)
-	shift
-	local commandline="exit"
-	while [[ -n $commandline ]]; do
-		read -e -p "${OUT_RED}$SUB ($FILENAME:$LINE):${OUT_OFF} " commandline
-		[[ -n $commandline ]] && eval "$commandline"
-	done
-}
-
-bt() {					#- backtrace
-	local command="exit"
-	local level=0
-	local LINE
-	local SUB
-	local FILENAME
-	while [[ $SUB != "main" ]]; do
-		level=$((level + 1))
-		read LINE SUB FILENAME <<<$(caller $level)
-		eval "printf '  %.0s' >/dev/tty {1..$level}"
-		out "➥  $SUB ($FILENAME:$LINE)\n"
-	done
-}

@@ -32,9 +32,7 @@ Query::get() {
 			println "${paramArray[$value]}"
 		fi
 	else
-		out "Enter value for $value="
-		read value
-		println "$value"
+		read -e -p "Enter value for $value=" value
 	fi
 }
 
