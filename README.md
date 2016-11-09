@@ -1,10 +1,11 @@
 bashTheObjects
 
-This is a simple to use object oriented library for bash.  It supports some
-basic reflection and utility functions.  The class library is small at the
-moment, but it will be built up soon, mostly with CGI/Web related functions.
-There will also be some system-admin and install scripts done in this for
-a web-based linux-installer.
+This is a quirky object oriented library for bash.  It supports some basic
+reflection and utility functions and has a built-in debugger.  There are
+a few classes for generating CGI scripts.
+
+The project is being abandoned, but I'll accept changes and fixes if you
+want to contribute.
 
 Artistic license.  Do what you want with it.
 

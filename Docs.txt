@@ -154,13 +154,28 @@ subclass 	put this and the name of the class you want to inherit from to
 See the examples for more information.
 
 
+ARRAYS
+======
+Both arrays and bash associative arrays are supported via the Array and Hash
+built-in classes.  Beware the horrible hack that makes this works means that
+local variables are copied around, so its not only slow as hell, but using
+large arrays will totally kill performace.
+
+Additionally, treat arrays as 1-based.  Element 0 is being skipped, so for now
+just remember to treat array size ... ${#Array[@]} ... as a loop index (loop
+while counter is under this value) and subtract 1 to get a size.
+
 BUGS
 ====
-	There are likely way too many to list here!  Array and Hashes aren't being
-properly localized yet.  Also, for some inexplicable reason inheritance is
-requiring that you import the subclass before using the subclass statement.
-The first thing that subclass does is import anyway, so this shouldn't be
-needed at all, but it makes it work.
+I bet there are tons of bugs in this, and they may not ever get fixed.  I've
+decided that this is simply too scarey to maintain.  As a proof-of-concept it
+has proven that OOP is *possible* in bash, but not desireable.  The project
+this was going to be used for has been put on hold, and I'll likely go ahead
+and write the language I wanted for the project.  It will be easier to learn
+a new language than work with the idiosyncrosies of bashtheObjects.  I keep
+this around so that people can play with it and learn a couple of cool shell
+tricks.  The debugger alone is great, and should likely be moved into its own
+module.
 
 Email questions/comments to Evan Langlois <uudruid74@gmail.com>
 
