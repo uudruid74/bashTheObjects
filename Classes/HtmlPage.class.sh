@@ -10,12 +10,16 @@ class HtmlPage
 	public Icon
 	public add
 	public render
+	public norefresh
+	public header
 
 	static var title "No Title Set"
 	static var icon ""
-#	static Array stylelist
-#	static Array contentlist
+	static var refresh ""
+	static Array stylelist
+	static Array contentlist
 	static var Singleton ""
+	inst  var headerinfo ""
 	const var CGI_Header "Content-type: text/html\r\n"
 	const var CGI_Redirect "Refresh: 0; url="
 
@@ -39,9 +43,10 @@ HtmlPage::dumpTitle() {
 }
 
 HtmlPage::setvar() { :; }
-
+HtmlPage::norefresh() { refresh=''; }
 HtmlPage::Icon() { println "$icon"; }
 HtmlPage::Style() { println "$style"; }
+HtmlPage::header() { headerinfo="$headerinfo\n$add"; }
 
 HtmlPage::dumpStyles() {
 	for sheet in "${stylelist[@]}"; do
@@ -53,16 +58,23 @@ HtmlPage::dumpStyles() {
 }
 
 HtmlPage::add() {
+	debug 5 "Html::add with all = ${all[*]}"
 	if [[ -n $content ]]; then
 		contentlist+=($content)
 		debug 3 "ADD: ${#contentlist[@]} adding content [$content]"
 	fi
+	if [[ -n $value ]]; then
+		contentlist+=($value)
+		debug 3 "ADD: ${#contentlist[@]} adding content [$value]"
+	fi
+
 	if [[ -n $style ]]; then
 		stylelist+=("$style")
 		debug 3 "${#stylelist[@]} adding style [$style]"
 	fi
-	if [[ -n $all ]]; then
+	if [[ -n ${all[*]} ]]; then
 		for c in ${all[@]}; do
+			debug 3 "Adding content from $c"
 			contentlist+=($c)
 		done
 	fi
@@ -80,6 +92,9 @@ HtmlPage::dumpContents() {
 
 HtmlPage::dumpHeader() {
 	println "<head>"
+	if [[ -n $refresh ]]; then
+		println "<meta http-equiv=\"refresh\" content=\"$refresh\">"
+	fi
 	if [[ -n $title ]]; then
 		HtmlPage::dumpTitle
 	fi
@@ -88,6 +103,9 @@ HtmlPage::dumpHeader() {
 	fi
 	if [[ -n $icon ]]; then
 		$icon.dump
+	fi
+	if [[ -n $headerinfo ]]; then
+		println "$headerinfo"
 	fi
 	println "</head>"
 }

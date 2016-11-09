@@ -9,13 +9,12 @@ class Query
 	public dump
 	public values
 
-	static hasharray paramArray
+	static Array paramArray
 
 Query::Query() {
 	declare -Ag paramArray
 	declare -a temparray
 	local saveIFS=$IFS
-	echo $paramArray
 	IFS='=&'
 	temparray=($QUERY_STRING)
 	for (( i=0; i<${#temparray[@]}; i+=2 ))
@@ -26,11 +25,17 @@ Query::Query() {
 }
 
 Query::get() {
-	if [[ $sanitize == true ]]; then
-		value=${paramArray[$value]}
-		println "$(Query::sanitize)"
+	if [[ -n $QUERY_STRING ]]; then
+		if [[ $sanitize == true ]]; then
+			value=${paramArray[$value]}
+			println "$(Query::sanitize)"
+		else
+			println "${paramArray[$value]}"
+		fi
 	else
-		println "${paramArray[$value]}"
+		out "Enter value for $value="
+		read value
+		println "$value"
 	fi
 }
 

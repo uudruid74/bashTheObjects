@@ -32,15 +32,17 @@ class Cat
 	public Stop
 	public Check
 	public getColor
+	public setVoice
 	public speak
 	public ondestroy
 	inst var color "black"
 	inst var motion
-	static var voice "MEOW"
+	inst var voice "MEOW"
 
 Cat::Cat() {
 	motion="Sleeping"
 }
+Cat::setVoice() { voice=$value; }
 Cat::speak() { println "==$voice=="; }
 Cat::set() { :; }
 Cat::Drive() { motion="Run"; }
@@ -53,27 +55,29 @@ import Cat
 import Car
 debug 1 "Imported %s %s" "Cat" "Car"
 
-new Car limo color:black
-new Cat whiskers color:orange
-new Car jag color:black
+new Car limo color: black
+new Cat whiskers color: orange
+new Car jag color: black
 new Cat blackie
 
 println
 println "Blackie is a $(blackie.getColor) $(typeof blackie)"
 println "Whiskers is a $(whiskers.getColor) $(typeof whiskers)"
 println "He says $(whiskers.speak)"
+whiskers.setVoice "Hisss!!!"
+println "And sometimes $(whiskers.speak)"
 println "Jag is a $(jag.getColor) $(typeof jag)"
-jag.set color:blue
+jag.set color: blue
 println "But I just painted the $(typeof jag) $(jag.getColor)"
 println "Private ... $(jag.testpvt)"
 
 println Testing complex arguments...
-jag.set color:"light blue"
+jag.set color: "light blue"
 
 
 println The jag\'s color is now $(jag.getColor)
 colorname="a pretty aweful shade of crap"
-jag.set color:$colorname
+jag.set color: $colorname
 println The jag is now $(jag.getColor)
 
 class Kitten

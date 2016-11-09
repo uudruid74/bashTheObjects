@@ -27,7 +27,7 @@ other code in your class file at a certain time, import will do it.
 Construction:
 	new <classname> <varname> [<args>]
 
-	Ex: new HtmlPage main title:"Cgi Test"
+	Ex: new HtmlPage main title: "Cgi Test"
 
 This creates the variable you pass it as an instance and calls the class
 constructor.  The constructor can get the name of the variable as $varname.
@@ -35,31 +35,31 @@ constructor.  The constructor can get the name of the variable as $varname.
 Instance Methods:
 	varname.method [<args>]
 
-	Ex: main.add style:globalStyle content:mainDiv
+	Ex: main.add style: globalStyle content: mainDiv
 
 	Like in typical bash, the return value will be numeric.  To return some
 other variable, print it and call the method like this:
-	$(varname.method [<args>])
+	$(varname.method <args>)
 
 Arguments:
 	Arguments are prefixed with an argument name followed by a colon.  You
 name your arguments when you pass them.  This means that arguments can be in
 nearly any order.  Your arguments will be placed in local variables of the
-same name as the argument.  Spaces are allowed, but in this case you should
-quote the argument, although its not actually necessary!
-	You can have the first argument be unnamed if you wish.  The variable will
+same name as the argument.  Argument names end with a colon and the space after 
+the colon is required so that quoted strings function properly.
+	You can have the an argument be unnamed if you wish.  The variable will
 be named "value" when it is passed to the method.  You can also pass arrays of
-values by using an argument called "all".  Another variable called "vars" is a
-a list of all argument variables that have been passed, which you can loop
+values by using an argument called "all".  Instance methods have a variable,
+"vars", which is a list of all argument variables.  The "vars" array can be looped
 through.  This lets your code manage multiple styles of invocations based on 
 the arguments it sees.
 	For example:
-		main.add all:div1 div2 div3
+		main.add all: div1 div2 div3
 
 	and I could also do
 		main.add div4
-	or the example above.
 
+	This last example passes div4 in the variable, "value".
 
 
 Creating Classes
@@ -70,10 +70,10 @@ CLASS DEFINITION
 A class begins with the "class" keyword followed by the class name.
 
 You should then list the variables and public functions of the class.
-	public <funcname> 		makes a public method
-	inst var <varname> 		an attribute of an instance
+	public <funcname> 	makes a public method
+	inst var <varname> 	an attribute of an instance
 	static var <varname>	a class variable, shared by all instances
-	const var <varname>		the same as static, but changes aren't saved
+	const var <varname>	the same as static, but changes aren't saved
 
 	You can also specify a default value after any variable and this value is
 used to initialize the variable.  The word "var" means a generic bash-style
@@ -92,11 +92,11 @@ you absolutely need to call a method from outside the class (static methods),
 then use the "callMethod" function.  You pass it the SELF variable, then the
 classname, then function name, then any arguments.  For example:
 		
-		callMethod '' MyClass MyFunction var1:value var2:value2
+	callMethod '' MyClass MyFunction var1: value var2: value2
 		
-		... and MyClass::MyFunction will get called, and variables are set
-		and restored.  Obviously, if you use instance variables, you'll need
-		a valid SELF instead of the placeholder shown.
+	... and MyClass::MyFunction will get called, and variables are set
+	and restored.  Obviously, if you use instance variables, you'll need
+	a valid SELF instead of the placeholder shown.
 
 	The constructor has the format classname::classname
 
@@ -110,7 +110,7 @@ make your variables public, like this ...
 		Class::get() { println ${!value}; }
 
 	Make sure those functions are "public" and then you can call them with
-		varname.set attr1:"value" attr2:"value2" attr3:"My value"
+		varname.set attr1: "value" attr2: "value2" attr3: "My value"
 	And if the parameter has the same name as an attribute (var) it will be set
 	Likewise,
 		$(varname.get attr1)
@@ -123,12 +123,17 @@ Utility Functions
 
 print 		a safer version of echo.  This version has no terminating newline
 println 	as above, with a newline
+output		like print, but directly to the tty.  Use this in a method when
+			you want to prompt the user, but stdout is captured as a return
+			value and stderr may be logged to a file.
 debug x 	debug takes the debug level to associate the message with and the
 			message string.  You can set the DEBUG variable to determine how
 			verbose the output is, or set DEBUG to a filename for everything!
 assert 		Simple asserts.  Kills the program if the given value isn't true
 typeof 		returns an object's class
 kindof 		tests if a class is in the inheritance tree
+classhas	test if a class has a function (like implements, but for class)
+fn_exists	See if a function exists (fully qualified)
 implements 	tests if a particular method is implemented
 new 		constructor - see above
 destroy 	destroy varname will clean up a variable and call your "ondestroy"
@@ -147,6 +152,15 @@ subclass 	put this and the name of the class you want to inherit from to
 
 
 See the examples for more information.
+
+
+BUGS
+====
+	There are likely way too many to list here!  Array and Hashes aren't being
+properly localized yet.  Also, for some inexplicable reason inheritance is
+requiring that you import the subclass before using the subclass statement.
+The first thing that subclass does is import anyway, so this shouldn't be
+needed at all, but it makes it work.
 
 Email questions/comments to Evan Langlois <uudruid74@gmail.com>
 

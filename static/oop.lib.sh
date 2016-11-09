@@ -34,21 +34,22 @@ CLASS=""
 SELF=0
 
 #- Currently only a single dir supported
-CLASSPATH="Classes"
+CLASSPATH="/var/www/html/cgi-bin/Classes"
 
 #- Debug Levels are :
-#- 		0 No Debug 			3 Warnings
-#- 		1 Asserts only 		4 Trace User Msgs
-#-      2 Errors 			5 Trace Every Method
-#-                          6 Trace Parameter Setting
+#- 0 No Debug 			3 Warnings
+#- 1 Asserts only 		4 Trace User Msgs
+#- 2 Errors 			5 Trace Every Method
+#-        6 Trace Parameter Setting
 #- You can also make this a filename to capture all debug messages
-DEBUG=1 		#- Default; change on the fly
+DEBUG=1 				#- Default; change on the fly
 
 #- NOTE: echo is really buggy ie: print a string that starts with a dash
 #- So, use the following functions instead of echo or echo -n
 
 print() { printf "%b" "$*"; }
 println() { printf "%b\n" "$*"; }
+out() { printf "%b" "$*" >/dev/tty; }
 
 #- Need a tool to generate object id's
 if [[ -x $(which uuidgen) ]]; then
@@ -63,6 +64,7 @@ fi
 
 class() {
   DEFCLASS="$1"
+  debug 4 "Creating new class $DEFCLASS"
   eval CLASS_${DEFCLASS}_VARS=""
   eval CLASS_${DEFCLASS}_FUNCTIONS=""
   eval CLASS_${DEFCLASS}_STATICS=""
@@ -84,7 +86,7 @@ static() { #- class vars
 		eval "CLASS_${DEFCLASS}_$2=\"$3\""
 	else
   		import $1
-		eval "new $1 CLASS_${DEFCLASS}_$2 $3"
+		eval "new $1 CLASS_${DEFCLASS}_$2 \"$3\""
   	fi
   fi
 }
@@ -101,7 +103,7 @@ const() { #- constant class vars
 		eval "declare -gr CLASS_${DEFCLASS}_$2=\"$3\""
 	else
     	import $1
-    	eval "new $1 CLASS_${DEFCLASS}_$2 $3"
+    	eval "new $1 CLASS_${DEFCLASS}_$2 \"$3\""
     	eval "declare -gr CLASS_${DEFCLASS}_$2"
     fi
   fi
@@ -115,6 +117,7 @@ const() { #- constant class vars
 #- inside another class function.
 
 public() {
+  debug 5 "Making $1 public"
   local varname="CLASS_${DEFCLASS}_FUNCTIONS"
   eval "$varname=\"\${$varname}$1 \""
 }
@@ -131,7 +134,7 @@ inst() {	#- instance vars
 		eval "INIT_${DEFCLASS}_$2=\"$3\""
 	else
 		import $1
-		eval "new $1 INIT_${DEFCLASS}_$2 $3"
+		eval "new $1 INIT_${DEFCLASS}_$2 \"$3\""
 	fi
   fi
 }
@@ -196,6 +199,13 @@ implements() { # implements funcname variable
   local func=$1
   eval "self=\$$var"
   eval "CLASS=\${TYPEOF_$self}"
+  classhas "$func" "$CLASS"
+  return $?;		#- failed
+}
+
+classhas() {		#- like implements, but for a class
+  local CLASS=$2
+  local func=$1
   while [[ -n $CLASS ]]; do
     eval "funclist=\"\$CLASS_${CLASS}_FUNCTIONS\""
     for funcname in $funclist; do
@@ -207,13 +217,17 @@ implements() { # implements funcname variable
   return 1;		#- failed
 }
 
-callMethod() { 		#- Horrible hack to set named arguments with spaces
-					#- Still need to use name=\"arg1 arg2 arg3\"
-	local SAVESELF=$SELF
-	SELF=$1
-	local CNAME=$CLASS
-	CLASS=$2
-	local FNAME=$3
+fn_exists() {
+    declare -f -F $1 > /dev/null
+    return $?
+}
+
+callMethod() { 		#- Named arguments now seperates value from var
+	local SAVESELF="$SELF"
+	local SELF="$1"
+	local CNAME="$CLASS"
+	local CLASS="$2"
+	local FNAME="$3"
 	shift 3
 	local tempvalue
 	local tempvar
@@ -221,24 +235,27 @@ callMethod() { 		#- Horrible hack to set named arguments with spaces
 
 	debug 5 "callMethod: $CLASS::$FNAME"
 	loadvar; loadfunc
-	for arg in "$@"; do
-		if [[ $arg == *":"* ]]; then
+
+	debug 3 "Arglist = ${arglist[*]}"
+	for arg in "${arglist[@]}"; do
+		debug 3 "Command Arg Parsing [$arg]"
+		if [[ $arg == *: ]]; then
 			tempvar="${arg%:*}"
-			tempvalue="${arg#*:}"
+			tempvalue=''
 			if [[ $tempvar == "all" ]]; then
-				local all; declare -a all=($tempvalue)
+				local all; declare -a all=('')
 			fi
+			continue
 		else
 			if [[ -z $tempvar ]]; then
 				tempvar="value"
 				tempvalue="$arg"
 			elif [[ $tempvar == "all" ]]; then
-				all+=($arg)
+				all+=("${arg}")
 			else
-				tempvalue+=" $arg"
+				tempvalue="$arg"
 			fi
 		fi
-		debug 6 "Setting $tempvar=$tempvalue"
 		if [[ $tempvar != "all" ]]; then
 			eval "local $tempvar=\"$tempvalue\""
 			debug 6 "Setting $tempvar=$tempvalue"
@@ -247,6 +264,19 @@ callMethod() { 		#- Horrible hack to set named arguments with spaces
 			debug 6 "all=${all[*]}"
 		fi
 	done
+	while ! fn_exists "${CLASS}::${FNAME}"; do
+		local newclass
+		debug 3 "${CLASS}::${FNAME} does not exist"
+		eval "newclass=\"\$SUPER_$CLASS\""
+		if [[ -z $newclass ]]; then
+			debug 2 "Can't find superclass for ${CLASS}"
+			break
+		else
+			debug 3 "Changed CLASS to $newclass"
+			CLASS="%newclass"
+		fi
+	done
+	debug 6 "Arguments complete - calling ${CLASS}::${FNAME} all=${all[*]}"
 	eval "${CLASS}::${FNAME}"
 	rt=$?
 	savevar
@@ -260,13 +290,14 @@ new() {
   local _objclass="$1"
   local varname="$2"
   shift 2
+  debug 5 "NEW ${_objclass} ${varname}"
   local _uuid=$(__UUIDGEN)
   eval TYPEOF_${_uuid}=$_objclass
   eval $varname=$_uuid
   local _funclist
   eval "_funclist=\"\$CLASS_${_objclass}_FUNCTIONS\""
   for _func in $_funclist; do
-    eval "${varname}.${_func}() { callMethod $_uuid $_objclass $_func \$@; }"
+    eval "${varname}.${_func}() { local arglist=(\"\${@}\"); callMethod $_uuid $_objclass $_func; }"
   done
   local _varlist
   eval "_varlist=\"\$CLASS_${_objclass}_VARS\""
@@ -278,23 +309,23 @@ new() {
 
 #- for use by classes only, should have a "static instance"
 set_instance() {
-	instance=$SELF
+	instance="$SELF"
 }
 
 #- called from Class::instance to set a variable to the singleton
 return_instance() {
 	local funclist
 	local class=$(eval "println \${TYPEOF_$instance}")
-	eval "$1=$instance"
+	eval "$1=\"$instance\""
 	eval "funclist=\"\$CLASS_${class}_FUNCTIONS\""
 
     for func in $funclist; do
-      eval "$1.${func}() { callMethod $instance $class $func \$@; }"
+      eval "$1.${func}() { arglist=(\"\${@}\"); callMethod \"$instance\" \"$class\" \"$func\"; }"
     done
 }
 
 destroy() {	# function to call destructors
-  local varname=$1
+  local varname="$1"
   eval "SELF=\$$1"
   local varlist
   if implements ondestroy $varname; then
@@ -316,27 +347,34 @@ import() {
   fi
 }
 
-subclass() { #- this is probably really broken
+subclass() { 		#- this is probably really broken
 	import $1
     local funclist
     local SUPERCLASS="$1"
     eval "SUPER_${DEFCLASS}=\"${SUPERCLASS}\""
+    debug 3 "Set superclass of [${SUPERCLASS}] to [${DEFCLASS}]"
     eval "funclist=\"\${CLASS_${SUPERCLASS}_FUNCTIONS}\""
     for func in $funclist; do
       eval "public $func"
       current_definition=$(declare -f $1::${func})
       current_definition=${current_definition#*\{}
       current_definition=${current_definition%\}}
+      if [[ -z ${current_definition} ]]; then
+	current_definition=':;';
+      fi
       eval "${DEFCLASS}::${func}() { ${current_definition} }"
     done
     current_definition=$(declare -f $1::$1)
     current_definition=${current_definition#*\{}
     current_definition=${current_definition%\}}
+    if [[ -z $current_definition ]]; then
+	current_definition=":;"
+    fi
     eval "${DEFCLASS}::${DEFCLASS}() { ${current_definition} }"
 
   
   eval "varlist=\"\$CLASS_${SUPERCLASS}_VARS\""
-  debug 4 "SUBCLASSING $SUPERCLASS with ${DEFCLASS} using $varlist"
+  debug 4 "SUBCLASSING ${DEFCLASS} with ${SUPERCLASS} using $varlist"
   for var in $varlist; do
   	debug 4 "class $DEFCLASS->$SUPERCLASS Var: $var"
     eval "INIT_${DEFCLASS}_${var}=\"\$INIT_${SUPERCLASS}_${var}\""
