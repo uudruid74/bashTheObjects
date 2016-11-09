@@ -1,6 +1,6 @@
 #!/bin/bash
 source static/oop.lib.sh
-
+DEBUG=1
 import Person
 
 new Person Christy Name: "Christy" Age: 21 Sex: "female"

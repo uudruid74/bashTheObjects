@@ -34,7 +34,7 @@ CLASS=""
 SELF=0
 
 #- Currently only a single dir supported
-CLASSPATH="/var/www/html/cgi-bin/Classes"
+CLASSPATH="Classes"
 
 #- Debug Levels are :
 #- 0 No Debug 			3 Warnings
@@ -61,17 +61,19 @@ else
   exit 1
 fi
 
-#- This mess is to read type info
-readonly VARTYPE='{ read __; 
-       case "`declare -p "$__"`" in
-            "declare -a"*) echo array;; 
-            "declare -A"*) echo hash;; 
-            "declare -- "*) echo scalar;; 
-       esac; 
-         } <<<'
-
-shopt -s expand_aliases
-alias vartype='eval "$VARTYPE"'
+copyToGlobal() {
+	local from=$1
+	local to=$2
+	local temp=$(eval "declare -p \$from" 2>/dev/null)
+  	temp="${temp/$from=/$to=}"
+  	temp="${temp/--/-g}"
+  	temp="${temp/-a/-ag}"
+  	temp="${temp/-A/-Ag}"
+  	eval "$temp"
+  	local new=$(eval "declare -p \$to" 2>/dev/null)
+  	debug 6 "Copied $from to $to ($temp) ($new)"
+  	dbreak
+}
 
 #- Now on to the really messy stuff
 
@@ -92,9 +94,9 @@ static() { #- class vars
   eval $varname="\"\${$varname}$2 \""
   if [[ -n $2 ]]; then
 	if [[ $1 == "Array" ]]; then
-		eval "declare -ag CLASS_${DEFCLASS}_$2=($3)"
+		eval "declare -ag CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Ag CLASS_${DEFCLASS}_$2=($3)"
+		eval "declare -Ag CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == 'var' ]]; then
 		eval "CLASS_${DEFCLASS}_$2=\"$3\""
 	else
@@ -109,9 +111,9 @@ const() { #- constant class vars
   eval $varname="\"\${$varname}$2 \""
   if [[ -n $2 ]]; then
     if [[ $1 == "Array" ]]; then
-		eval "declare -agr CLASS_${DEFCLASS}_$2=($3)"
+		eval "declare -agr CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Agr CLASS_${DEFCLASS}_$2=($3)"
+		eval "declare -Agr CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == 'var' ]]; then
 		eval "declare -gr CLASS_${DEFCLASS}_$2=\"$3\""
 	else
@@ -140,9 +142,9 @@ inst() {	#- instance vars
   eval $varname="\"\${$varname}$2 \""
   if [[ -n $2 ]]; then
 	if [[ $1 == "Array" ]]; then
-		eval "declare -ag INIT_${DEFCLASS}_$2=($3)"
+		eval "declare -ag INIT_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Ag INIT_${DEFCLASS}_$2=($3)"
+		eval "declare -Ag INIT_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "var" ]]; then
 		eval "INIT_${DEFCLASS}_$2=\"$3\""
 	else
@@ -153,44 +155,18 @@ inst() {	#- instance vars
 }
 
 loadvar() {
+  debug 4 "Loading Variables for object $SELF"
   eval "varlist=\"\$CLASS_${CLASS}_VARS\""
   for var in $varlist; do
-    local type=$(vartype "INSTANCE_${SELF}_${var}")
-    debug 6 "type of $var is $type"
-  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
-  		local temp=$(eval "declare -p \$INSTANCE_${SELF}_$var")
-  		debug 6 "Loading $var from $temp"
-  		eval "${temp/INSTANCE_${SELF}_${var}=/$var=}"
-  	else
-    	eval "$var=\"\$INSTANCE_${SELF}_$var\""
-    	eval "debug 6 \"Loading $var as \$$var\""
-    fi
+  	copyToGlobal INSTANCE_${SELF}_${var} $var
   done
   eval "varlist=\"\$CLASS_${CLASS}_STATICS\""
   for var in $varlist; do
-  	local type=$(vartype "CLASS_${CLASS}_${var}")
-  	debug 6 "type of $var is $type"
-  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
-  		local temp=$(eval "declare -p \$CLASS_${CLASS}_$var")
-  		debug 6 "Loading $var from $temp"
-  		eval "${temp/CLASS_${CLASS}_${var}=/$var=}"
-  	else
-    	eval "$var=\"\$CLASS_${CLASS}_$var\""
-    	eval "debug 6 \"Loading $var as \$$var\""
-    fi
+	copyToGlobal CLASS_${CLASS}_${var} $var
   done
   eval "varlist=\"\$CLASS_${CLASS}_CONSTS\""
   for var in $varlist; do
-  	local type=$(vartype "CLASS_${CLASS}_${var}")
-  	debug 6 "type of $var is $type"
-  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
-  		local temp=$(eval "declare -p \$CLASS_${CLASS}_$var")
-  		debug 6 "Loading $var from $temp"
-  		eval "${temp/CLASS_${CLASS}_${var}=/$var=}"
-  	else
-    	eval "$var=\"\$CLASS_${CLASS}_$var\""
-    	eval "debug 6 \"Loading $var as \$$var\""
-    fi
+	copyToGlobal CLASS_${CLASS}_${var} $var
   done
 }
 
@@ -202,31 +178,16 @@ loadfunc() {
 }
 
 savevar() {
+  debug 4 "Saving variables in object $SELF"
   eval "varlist=\"\$CLASS_${CLASS}_VARS\""
   for var in $varlist; do
-    local type=$(vartype "\$var")
-    debug 6 "type of $var is $type"
-  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
-  		local temp=$(eval "declare -p \$var")
-  		debug 6 "Saving $temp"
-  		eval "${temp/$var=/INSTANCE_${SELF}_${var}=}"
-  	else
-    	eval "INSTANCE_${SELF}_${var}=\"\$$var\""
-    	eval "debug 6 \"Setting $var to \$$var\""
-    fi
+  	copyToGlobal $var INSTANCE_${SELF}_${var}
+  	unset $var
   done
   eval "varlist=\"\$CLASS_${CLASS}_STATICS\""
   for var in $varlist; do
-  	local type=$(vartype "\$var")
-    debug 6 "type of $var is $type"
-  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
-  		local temp=$(eval "declare -p \$var")
-  		debug 6 "Saving $temp"
-  		eval "${temp/$var=/CLASS_${CLASS}_${var}=}"
-  	else
-    	eval "CLASS_${CLASS}_${var}=\"\$$var\""
-    	eval "debug 6 \"Setting $var to \$$var\""
-    fi
+	copyToGlobal $var CLASS_${CLASS}_${var}
+  	unset $var
   done
 }
 
@@ -485,8 +446,8 @@ debug() {
   if [[ -z $DEBUG || $DEBUG -eq 0 ]]; then
 	return
   fi
-  level=$1
-  fmt=$2
+  local level=$1
+  local fmt=$2
   shift 2
   if [[ "0123456789" =~ $DEBUG ]]; then
   	if [[ $level -gt $DEBUG ]]; then
@@ -498,3 +459,45 @@ debug() {
   fi
 }
 
+#-
+#- Simple Integrated Debugger!
+#- 
+trap tbreak INT
+OUT_RED=$(tput setaf 1)		#- red
+OUT_OFF=$(tput sgr0)		#- normal
+
+
+tbreak() {				#- Manual breakpoints, debug level 4+
+	DEBUG=6
+	dbreak
+}
+
+dbreak() {
+	if [[ DEBUG -lt 4 ]]; then
+		return
+	fi
+	local LINE
+	local SUB
+	local FILENAME
+	read LINE SUB FILENAME <<<$(caller 0)
+	shift
+	local commandline="exit"
+	while [[ -n $commandline ]]; do
+		read -e -p "${OUT_RED}$SUB ($FILENAME:$LINE):${OUT_OFF} " commandline
+		[[ -n $commandline ]] && eval "$commandline"
+	done
+}
+
+bt() {					#- backtrace
+	local command="exit"
+	local level=0
+	local LINE
+	local SUB
+	local FILENAME
+	while [[ $SUB != "main" ]]; do
+		level=$((level + 1))
+		read LINE SUB FILENAME <<<$(caller $level)
+		eval "printf '  %.0s' >/dev/tty {1..$level}"
+		out "➥  $SUB ($FILENAME:$LINE)\n"
+	done
+}

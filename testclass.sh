@@ -1,5 +1,6 @@
 #!/bin/bash
 source static/oop.lib.sh
+DEBUG=1
 
 class Car
 	public Car
@@ -42,7 +43,7 @@ Garage::remove() {
 }
 Garage::size() {
 	debug 5 "Finding size"
-	print ${#bay[@]}
+	print $((${#bay[@]} - 1))
 }
 Garage::car() {
 	debug 5 "Finding car at bay $value"
@@ -138,7 +139,6 @@ assert 'implements ondestroy whiskers'
 destroy whiskers
 
 println "Puttings cars in garage"
-DEBUG=6
 new Garage workshop
 new Garage repairshop
 workshop.park limo
