@@ -61,6 +61,19 @@ else
   exit 1
 fi
 
+#- This mess is to read type info
+readonly VARTYPE='{ read __; 
+       case "`declare -p "$__"`" in
+            "declare -a"*) echo array;; 
+            "declare -A"*) echo hash;; 
+            "declare -- "*) echo scalar;; 
+       esac; 
+         } <<<'
+
+shopt -s expand_aliases
+alias vartype='eval "$VARTYPE"'
+
+#- Now on to the really messy stuff
 
 class() {
   DEFCLASS="$1"
@@ -142,16 +155,42 @@ inst() {	#- instance vars
 loadvar() {
   eval "varlist=\"\$CLASS_${CLASS}_VARS\""
   for var in $varlist; do
-    eval "$var=\"\$INSTANCE_${SELF}_$var\""
-    eval "debug 6 \"Loading $var as \$$var\""
+    local type=$(vartype "INSTANCE_${SELF}_${var}")
+    debug 6 "type of $var is $type"
+  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
+  		local temp=$(eval "declare -p \$INSTANCE_${SELF}_$var")
+  		debug 6 "Loading $var from $temp"
+  		eval "${temp/INSTANCE_${SELF}_${var}=/$var=}"
+  	else
+    	eval "$var=\"\$INSTANCE_${SELF}_$var\""
+    	eval "debug 6 \"Loading $var as \$$var\""
+    fi
   done
   eval "varlist=\"\$CLASS_${CLASS}_STATICS\""
   for var in $varlist; do
-    eval "$var=\"\$CLASS_${CLASS}_$var\""
+  	local type=$(vartype "CLASS_${CLASS}_${var}")
+  	debug 6 "type of $var is $type"
+  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
+  		local temp=$(eval "declare -p \$CLASS_${CLASS}_$var")
+  		debug 6 "Loading $var from $temp"
+  		eval "${temp/CLASS_${CLASS}_${var}=/$var=}"
+  	else
+    	eval "$var=\"\$CLASS_${CLASS}_$var\""
+    	eval "debug 6 \"Loading $var as \$$var\""
+    fi
   done
   eval "varlist=\"\$CLASS_${CLASS}_CONSTS\""
   for var in $varlist; do
-    eval "$var=\"\$CLASS_${CLASS}_$var\""
+  	local type=$(vartype "CLASS_${CLASS}_${var}")
+  	debug 6 "type of $var is $type"
+  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
+  		local temp=$(eval "declare -p \$CLASS_${CLASS}_$var")
+  		debug 6 "Loading $var from $temp"
+  		eval "${temp/CLASS_${CLASS}_${var}=/$var=}"
+  	else
+    	eval "$var=\"\$CLASS_${CLASS}_$var\""
+    	eval "debug 6 \"Loading $var as \$$var\""
+    fi
   done
 }
 
@@ -165,12 +204,29 @@ loadfunc() {
 savevar() {
   eval "varlist=\"\$CLASS_${CLASS}_VARS\""
   for var in $varlist; do
-    eval "INSTANCE_${SELF}_$var=\"\$$var\""
-    eval "debug 6 \"Setting $var to \$$var\""
+    local type=$(vartype "\$var")
+    debug 6 "type of $var is $type"
+  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
+  		local temp=$(eval "declare -p \$var")
+  		debug 6 "Saving $temp"
+  		eval "${temp/$var=/INSTANCE_${SELF}_${var}=}"
+  	else
+    	eval "INSTANCE_${SELF}_${var}=\"\$$var\""
+    	eval "debug 6 \"Setting $var to \$$var\""
+    fi
   done
   eval "varlist=\"\$CLASS_${CLASS}_STATICS\""
   for var in $varlist; do
-    eval "CLASS_${CLASS}_$var=\"\$$var\""
+  	local type=$(vartype "\$var")
+    debug 6 "type of $var is $type"
+  	if [[ $type == "array" ]] || [[ $type == "hash" ]]; then
+  		local temp=$(eval "declare -p \$var")
+  		debug 6 "Saving $temp"
+  		eval "${temp/$var=/CLASS_${CLASS}_${var}=}"
+  	else
+    	eval "CLASS_${CLASS}_${var}=\"\$$var\""
+    	eval "debug 6 \"Setting $var to \$$var\""
+    fi
   done
 }
 

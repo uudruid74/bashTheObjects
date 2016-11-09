@@ -25,6 +25,31 @@ Car::getColor() { println "$color"; }
 Car::testpvt() { Car::pvtFunc; }
 Car::pvtFunc() { println "private function of $(getColor) car"; }
 
+class Garage
+	public park
+	public unpark
+	public size
+	public car
+	inst Array bay
+
+Garage::Garage() { :; }
+Garage::park() {
+	debug 5 "Parking $value"
+	bay+=($value)
+}
+Garage::remove() {
+	bay[$value]=''
+}
+Garage::size() {
+	debug 5 "Finding size"
+	print ${#bay[@]}
+}
+Garage::car() {
+	debug 5 "Finding car at bay $value"
+	print "${bay[$value]}"
+}
+
+
 class Cat
 	public Cat
 	public set
@@ -111,6 +136,22 @@ println "He is $(junior.getColor)"
 println "whiskers is a $(typeof whiskers)"
 assert 'implements ondestroy whiskers'
 destroy whiskers
+
+println "Puttings cars in garage"
+DEBUG=6
+new Garage workshop
+new Garage repairshop
+workshop.park limo
+repairshop.park jag
+repairshop.park limo
+new Car fiero color:blue
+repairshop.park fiero
+workshop.park jag
+println "There are $(workshop.size) cars in the workshop"
+println "The first car is $(workshop.car 1)"
+println "The second car is $(workshop.car 2)"
+println "The repairshop has $(repairshop.size) cars"
+println "First: $(repairshop.car 1) Second: $(repairshop.car 2) Third: $(repairshop.car 3)"
 
 #assert 'implements ondestroy whiskers'
 println "whiskers is a $(typeof whiskers)"
