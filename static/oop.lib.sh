@@ -72,7 +72,6 @@ copyToGlobal() {
   	eval "$temp"
   	local new=$(eval "declare -p \$to" 2>/dev/null)
   	debug 6 "Copied $from to $to ($temp) ($new)"
-  	dbreak
 }
 
 #- Now on to the really messy stuff
@@ -462,17 +461,17 @@ debug() {
 #-
 #- Simple Integrated Debugger!
 #- 
-trap tbreak INT
+trap breakpoint INT
 OUT_RED=$(tput setaf 1)		#- red
 OUT_OFF=$(tput sgr0)		#- normal
 
 
-tbreak() {				#- Manual breakpoints, debug level 4+
+breakpoint() {				#- Manual breakpoints, debug level 4+
 	DEBUG=6
-	dbreak
+	cbreak
 }
 
-dbreak() {
+cbreak() {					#- conditional breakpoint
 	if [[ DEBUG -lt 4 ]]; then
 		return
 	fi
