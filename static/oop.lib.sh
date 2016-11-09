@@ -96,7 +96,7 @@ static() { #- class vars
 	if [[ $1 == "Array" ]]; then
 		eval "declare -ag CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Ag CLASS_${DEFCLASS}_$2=(\"$3\")"
+		eval "declare -Ag CLASS_${DEFCLASS}_$2"
 	elif [[ $1 == 'var' ]]; then
 		eval "CLASS_${DEFCLASS}_$2=\"$3\""
 	else
@@ -113,7 +113,7 @@ const() { #- constant class vars
     if [[ $1 == "Array" ]]; then
 		eval "declare -agr CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Agr CLASS_${DEFCLASS}_$2=(\"$3\")"
+		eval "declare -Agr CLASS_${DEFCLASS}_$2"
 	elif [[ $1 == 'var' ]]; then
 		eval "declare -gr CLASS_${DEFCLASS}_$2=\"$3\""
 	else
@@ -144,7 +144,7 @@ inst() {	#- instance vars
 	if [[ $1 == "Array" ]]; then
 		eval "declare -ag INIT_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Ag INIT_${DEFCLASS}_$2=(\"$3\")"
+		eval "declare -Ag INIT_${DEFCLASS}_$2"
 	elif [[ $1 == "var" ]]; then
 		eval "INIT_${DEFCLASS}_$2=\"$3\""
 	else

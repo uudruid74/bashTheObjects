@@ -29,8 +29,6 @@ HtmlPage::instance() {
 }
 
 HtmlPage::HtmlPage() {
-    declare -ag stylelist
-	declare -ag contentlist
 	if [[ -n $style ]]; then
 		HtmlPage::add
 	fi

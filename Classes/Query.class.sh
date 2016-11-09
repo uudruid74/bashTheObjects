@@ -9,10 +9,9 @@ class Query
 	public dump
 	public values
 
-	static Array paramArray
+	static Hash paramArray
 
 Query::Query() {
-	declare -Ag paramArray
 	declare -a temparray
 	local saveIFS=$IFS
 	IFS='=&'
