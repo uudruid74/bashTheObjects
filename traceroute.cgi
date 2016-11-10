@@ -3,7 +3,6 @@ source static/oop.lib.sh
 
 new Query cgi
 new HtmlPage main title: "Traceroute" refresh: 1
-new Script reloader
 destination=$(cgi.get q)
 if [[ ! -z $destination ]]; then
 	if [[ ! -r "/tmp/traceresults.$destination" ]]; then
@@ -16,8 +15,6 @@ if [[ ! -z $destination ]]; then
 	precontent="$(tr '\n*' '|-' <"/tmp/traceresults.$destination")"
 	if grep 'DONE'<<<"$precontent" >/dev/null; then
 		main.norefresh
-	else
-		reloader.setContent content: "location.reload()"
 	fi
 	results.setContent content: "$precontent"
 else

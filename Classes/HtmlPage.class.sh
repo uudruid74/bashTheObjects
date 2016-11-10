@@ -88,7 +88,8 @@ HtmlPage::dumpContents() {
 HtmlPage::dumpHeader() {
 	println "<head>"
 	if [[ -n $refresh ]]; then
-		println "<meta http-equiv=\"refresh\" content=\"$refresh\">"
+		println "<script>setTimeout(function() { location.reload(); }, 1000);</script>"
+		println "<noscript><meta http-equiv=\"refresh\" content=\"$refresh\"></noscript>"
 	fi
 	if [[ -n $title ]]; then
 		HtmlPage::dumpTitle
