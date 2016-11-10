@@ -92,15 +92,15 @@ const() { #- constant class vars
   eval $varname="\"\${$varname}$2 \""
   if [[ -n $2 ]]; then
     if [[ $1 == "Array" ]]; then
-		eval "declare -agr CLASS_${DEFCLASS}_$2=(\"$3\")"
+		eval "declare -ag CLASS_${DEFCLASS}_$2=(\"$3\")"
 	elif [[ $1 == "Hash" ]]; then
-		eval "declare -Agr CLASS_${DEFCLASS}_$2['init']=\"$3\""
+		eval "declare -Ag CLASS_${DEFCLASS}_$2['init']=\"$3\""
 	elif [[ $1 == 'var' ]]; then
-		eval "declare -gr CLASS_${DEFCLASS}_$2=\"$3\""
+		eval "declare -g CLASS_${DEFCLASS}_$2=\"$3\""
 	else
     	import $1
     	eval "new $1 CLASS_${DEFCLASS}_$2 \"$3\""
-    	eval "declare -gr CLASS_${DEFCLASS}_$2"
+    	eval "declare -g CLASS_${DEFCLASS}_$2"
     fi
   fi
 }
