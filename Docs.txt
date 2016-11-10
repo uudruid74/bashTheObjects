@@ -165,6 +165,7 @@ Additionally, treat arrays as 1-based.  Element 0 is being skipped, so for now
 just remember to treat array size ... ${#Array[@]} ... as a loop index (loop
 while counter is under this value) and subtract 1 to get a size.
 
+
 BUGS
 ====
 I bet there are tons of bugs in this, and they may not ever get fixed.  I've
@@ -174,8 +175,8 @@ this was going to be used for has been put on hold, and I'll likely go ahead
 and write the language I wanted for the project.  It will be easier to learn
 a new language than work with the idiosyncrosies of bashtheObjects.  I keep
 this around so that people can play with it and learn a couple of cool shell
-tricks.  The debugger alone is great, and should likely be moved into its own
-module.
+tricks.
+
 
 Email questions/comments to Evan Langlois <uudruid74@gmail.com>
 

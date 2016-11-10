@@ -340,12 +340,14 @@ destroy() {	# function to call destructors
 }
 
 import() {
+  local DEFCLASS_SAVE=$DEFCLASS
   if [ -z "$(eval println \$CLASS_$1_FUNCTIONS)" ]; then
   	source "$CLASSPATH/$1.class.sh"
     debug 4 "Importing $CLASSPATH/$1.class.sh"
   else
     debug 4 "Class already loaded"
   fi
+  DEFCLASS=$DEFCLASS_SAVE
 }
 
 subclass() { 		#- this is probably really broken
@@ -361,7 +363,7 @@ subclass() { 		#- this is probably really broken
       current_definition=${current_definition#*\{}
       current_definition=${current_definition%\}}
       if [[ -z ${current_definition} ]]; then
-	current_definition=':;';
+        current_definition=':;';
       fi
       eval "${DEFCLASS}::${func}() { ${current_definition} }"
     done
@@ -369,11 +371,10 @@ subclass() { 		#- this is probably really broken
     current_definition=${current_definition#*\{}
     current_definition=${current_definition%\}}
     if [[ -z $current_definition ]]; then
-	current_definition=":;"
+      current_definition=":;"
     fi
     eval "${DEFCLASS}::${DEFCLASS}() { ${current_definition} }"
 
-  
   eval "varlist=\"\$CLASS_${SUPERCLASS}_VARS\""
   debug 4 "SUBCLASSING ${DEFCLASS} with ${SUPERCLASS} using $varlist"
   for var in $varlist; do

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-import Icon
-import Style
-
 class HtmlPage 
 
 	public Title

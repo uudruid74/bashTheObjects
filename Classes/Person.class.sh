@@ -1,4 +1,3 @@
-
 class Person
         public show
         public set

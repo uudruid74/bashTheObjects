@@ -1,6 +1,3 @@
-import Tag
-import Div
-
 class Pre
 	subclass Div
 	

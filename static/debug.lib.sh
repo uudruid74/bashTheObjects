@@ -80,7 +80,7 @@ breakpoint() {				#- Manual breakpoints, debug level 4+
 }
 
 cbreak() {				#- conditional breakpoint
-	if [[ DEBUG -lt 4 ]]; then
+	if [[ DEBUG -lt 4 ]] || [[ ! -t 1 ]]; then
 		return
 	fi
 	realbreak
@@ -95,9 +95,7 @@ realbreak() {
 	read LINE SUB FILENAME <<<$(caller 0)
 	shift
 	local commandline="exit"
-	ttyout $OUT_ORG
-	eval "sed '${LINE}q;d' $FILENAME"
-	ttyout $OUT_OFF
+	context
 	while [[ -n $commandline ]]; do
 		read -e -p "${OUT_RED}$SUB ($FILENAME:$LINE):${OUT_OFF} " commandline
 		[[ -n $commandline ]] && eval "$commandline"
@@ -105,15 +103,15 @@ realbreak() {
 	IFS=$CIFS
 }
 
-c() {					#- Content - 10 lines
+context() {					#- Content - 10 lines
 	read LINE SUB FILENAME <<<$(caller 2)
 	local start=$(($LINE - 5))
-	ttyout $(tail -n+$start $FILENAME | head -n5)
+	ttyout "$(tail -n+$start $FILENAME | head -n5)\n"
 	ttyout $OUT_ORG
-	ttyout $(eval "sed '${LINE}q;d' $FILENAME")
+	ttyout "$(eval "sed '${LINE}q;d' $FILENAME")\n"
 	ttyout $OUT_OFF
 	start=$(($LINE + 1))
-	ttyout $(tail -n+$start $FILENAME | head -n4)
+	ttyout "$(tail -n+$start $FILENAME | head -n4)\n"
 }
 
 bt() {					#- backtrace

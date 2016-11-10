@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 class Query
 	public get
 	public encode
@@ -33,6 +32,7 @@ Query::get() {
 		fi
 	else
 		read -e -p "Enter value for $value=" value
+		println "$value"
 	fi
 }
 
